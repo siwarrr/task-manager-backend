@@ -9,7 +9,7 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 // Callback after Google authentication
 router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login', session: false }), (req, res) => {
     const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
-    res.json({ user: req.user, token });
+    res.redirect(`http://localhost:3000/home?token=${token}`);
 });
 
 module.exports = router;
