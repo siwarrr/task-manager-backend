@@ -1,5 +1,7 @@
 const Task = require('../models/task');
 const Project = require('../models/project');
+const User = require('../models/user');
+const mongoose = require('mongoose'); 
 
 exports.createTask = async (req, res) => {
     const { title, description, assignedTo, dueDate, priority, project } = req.body;
@@ -10,19 +12,36 @@ exports.createTask = async (req, res) => {
             return res.status(404).json({ message: 'Project not found' });
         }
 
+        const assignedToIds = [];
+        if (assignedTo && Array.isArray(assignedTo)) {
+            for (const emailOrId of assignedTo) {
+                if (mongoose.isValidObjectId(emailOrId)) {
+                    assignedToIds.push(emailOrId);
+                } else {
+                    const user = await User.findOne({ email: emailOrId });
+                    if (user) {
+                        assignedToIds.push(user._id);
+                    } else {
+                        return res.status(400).json({ message: `User not found for email: ${emailOrId}` });
+                    }
+                }
+            }
+        }
+
         const task = new Task({
             title,
             description,
-            assignedTo,
-            user: req.user._id,
+            assignedTo: assignedToIds,
+            user: req.user._id, 
             project,
             dueDate,
-            priority
+            priority,
         });
 
         const savedTask = await task.save();
         res.status(201).json(savedTask);
     } catch (error) {
+        console.error('Error creating task:', error);
         res.status(500).json({ message: 'Error creating task', error });
     }
 };
@@ -67,12 +86,26 @@ exports.getTaskById = async (req, res) => {
 exports.updateTask = async (req, res) => {
     try {
         const { id } = req.params;
+        const { assignedTo, ...updates } = req.body;
 
-        const updatedTask = await Task.findByIdAndUpdate(
-            id,
-            req.body,
-            { new: true }
-        );
+        if (assignedTo && Array.isArray(assignedTo)) {
+            const assignedToIds = [];
+            for (const emailOrId of assignedTo) {
+                if (mongoose.isValidObjectId(emailOrId)) {
+                    assignedToIds.push(emailOrId);
+                } else {
+                    const user = await User.findOne({ email: emailOrId });
+                    if (user) {
+                        assignedToIds.push(user._id);
+                    } else {
+                        return res.status(400).json({ message: `User not found for email: ${emailOrId}` });
+                    }
+                }
+            }
+            updates.assignedTo = assignedToIds;
+        }
+
+        const updatedTask = await Task.findByIdAndUpdate(id, updates, { new: true });
 
         if (!updatedTask) {
             return res.status(404).json({ message: 'Task not found' });
@@ -80,7 +113,7 @@ exports.updateTask = async (req, res) => {
 
         res.status(200).json(updatedTask);
     } catch (error) {
-        res.status(500).json({ messgae: 'Error updatinf task', error });
+        res.status(500).json({ message: 'Error updating task', error });
     }
 };
 

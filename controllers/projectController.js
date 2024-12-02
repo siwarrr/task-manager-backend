@@ -1,20 +1,43 @@
 const Project = require('../models/project');
 const Task = require('../models/task'); 
+const mongoose = require('mongoose');
+const User = require('../models/user');
 
 exports.createProject = async (req, res) => {
     const { name, description, members } = req.body;
 
     try {
+        const memberIds = [];
+        if (members && Array.isArray(members)) {
+            for (const emailOrId of members) {
+                if (mongoose.isValidObjectId(emailOrId)) {
+                    memberIds.push(emailOrId);
+                } else {
+                    const user = await User.findOne({ email: emailOrId });
+                    if (user) {
+                        memberIds.push(user._id);
+                    } else {
+                        return res.status(400).json({ message: `User not found for email: ${emailOrId}` });
+                    }
+                }
+            }
+        }
+
+        memberIds.push(req.user._id);
+
+        const uniqueMemberIds = [...new Set(memberIds.map(String))];
+
         const project = new Project({
             name,
             description,
             owner: req.user._id,
-            members: members ? [...members, req.user._id] : [req.user._id]
+            members: uniqueMemberIds,
         });
 
         const savedProject = await project.save();
         res.status(201).json(savedProject);
     } catch (error) {
+        console.error('Error creating project:', error);
         res.status(500).json({ message: 'Error creating project', error });
     }
 };
@@ -60,18 +83,36 @@ exports.updateProject = async (req, res) => {
             return res.status(404).json({ message: 'Project not found' });
         }
 
-        const updatedMembers = members
-            ? Array.from(new Set([...project.members.map(String), ...members]))
-            : project.members;
+        const updatedMembers = [];
+        if (members && Array.isArray(members)) {
+            for (const emailOrId of members) {
+                if (mongoose.isValidObjectId(emailOrId)) {
+                    updatedMembers.push(emailOrId);
+                } else {
+                    const user = await User.findOne({ email: emailOrId });
+                    if (user) {
+                        updatedMembers.push(user._id);
+                    } else {
+                        return res.status(400).json({ message: `User not found for email: ${emailOrId}` });
+                    }
+                }
+            }
+        }
+
+        // Conserver les membres existants
+        const uniqueMembers = [
+            ...new Set([...project.members.map(String), ...updatedMembers]),
+        ];
 
         const updatedProject = await Project.findByIdAndUpdate(
             req.params.id,
-            { ...rest, members: updatedMembers },
+            { ...rest, members: uniqueMembers },
             { new: true }
         );
 
         res.status(200).json(updatedProject);
     } catch (error) {
+        console.error('Error updating project:', error);
         res.status(500).json({ message: 'Error updating project', error });
     }
 };
