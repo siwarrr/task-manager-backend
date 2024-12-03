@@ -11,13 +11,10 @@ router.get(
     "/google/callback",
     passport.authenticate("google", { failureRedirect: "/login", session: false }),
     (req, res) => {
-        console.log("Utilisateur authentifié via Google :", req.user);
-
         if (!req.user) {
-            return res.redirect("/login");
+            return res.redirect("http://localhost:3000/?error=Authentication%20Failed");
         }
 
-        // Génération du token JWT
         const token = jwt.sign(
             { id: req.user._id, name: req.user.name, email: req.user.email },
             process.env.JWT_SECRET,
@@ -26,8 +23,8 @@ router.get(
 
         console.log("Token généré :", token);
 
-        // Redirection vers le frontend
-        res.redirect(`http://localhost:3000/home?token=${token}`);
+        // Redirection to the frontend with the token in the URL
+        res.redirect(`http://localhost:3000/oauth-callback?token=${token}`);
     }
 );
 
