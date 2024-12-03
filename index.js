@@ -18,7 +18,7 @@ const app = express();
 
 app.use(
     cors({
-        origin: "http://localhost:3000"
+        origin: ["https://task-manager-front-neon.vercel.app/"]
     })
 );
 app.use(express.json());
