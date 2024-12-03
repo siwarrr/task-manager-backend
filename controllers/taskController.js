@@ -12,6 +12,13 @@ exports.createTask = async (req, res) => {
             return res.status(404).json({ message: 'Project not found' });
         }
 
+        if (!title) {
+            return res.status(400).json({ message: 'Title is required' });
+        }
+        if (priority && !['low', 'medium', 'high'].includes(priority.toLowerCase())) {
+            return res.status(400).json({ message: 'Invalid priority value' });
+        }        
+
         const assignedToIds = [];
         if (assignedTo && Array.isArray(assignedTo)) {
             for (const emailOrId of assignedTo) {

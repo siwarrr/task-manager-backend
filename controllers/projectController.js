@@ -17,7 +17,7 @@ exports.createProject = async (req, res) => {
                     if (user) {
                         memberIds.push(user._id);
                     } else {
-                        return res.status(400).json({ message: `User not found for email: ${emailOrId}` });
+                        return res.status(400).json({ error: `User not found for email: ${emailOrId}` });
                     }
                 }
             }
@@ -35,7 +35,7 @@ exports.createProject = async (req, res) => {
         });
 
         const savedProject = await project.save();
-        res.status(201).json(savedProject);
+        res.status(201).json({ project: savedProject });
     } catch (error) {
         console.error('Error creating project:', error);
         res.status(500).json({ message: 'Error creating project', error });
