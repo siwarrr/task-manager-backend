@@ -24,7 +24,7 @@ router.get(
         console.log("Token généré :", token);
 
         // Redirection to the frontend with the token in the URL
-        res.redirect(`http://localhost:3000/oauth-callback?token=${token}`);
+        res.redirect(`https://task-manager-front-neon.vercel.app/oauth-callback?token=${token}`);
     }
 );
 

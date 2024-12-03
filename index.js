@@ -18,9 +18,14 @@ const app = express();
 
 app.use(
     cors({
-        origin: ["https://task-manager-front-neon.vercel.app/"]
+        origin: [
+            "https://task-manager-front-neon.vercel.app", 
+            "http://localhost:3000" 
+        ],
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], 
     })
 );
+
 app.use(express.json());
 
 app.use(passport.initialize());
